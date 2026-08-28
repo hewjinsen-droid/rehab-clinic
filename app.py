@@ -7,7 +7,7 @@ from pathlib import Path
 REHAB_CSV_PATH = Path(__file__).parent / "rehab_data.csv"
 
 # ==========================================
-# 🚀 核心装修：在网页最顶端建立两个折叠空间
+# 🚀 核心装修：在网页最顶端建立s两个折叠空间
 # ==========================================
 tab1, tab2 = st.tabs(["🧍 居家康复打卡站", "👨‍⚕️ 主治医师数据后台"])
 
@@ -23,6 +23,10 @@ with tab1:
 
     st.subheader("📝 今日打卡")
     patient_name = st.text_input("患者姓名", placeholder="请输入您的姓名")
+    
+    # 👇 完美植入的日历功能
+    record_date = st.date_input("📅 选择训练日期")
+    
     actual_sets = st.number_input("实际完成组数", min_value=0, step=1, value=0)
     vas_score = st.slider("VAS 疼痛评分（0-10 分）", min_value=0, max_value=10, value=0)
     submitted = st.button("提交今日打卡", type="primary", use_container_width=True)
@@ -31,6 +35,7 @@ with tab1:
         # 1. 记账
         check_in_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         new_record = {
+            "训练日期": str(record_date),  # 👈 新加入的日期列
             "患者姓名": patient_name,
             "实际组数": actual_sets,
             "VAS疼痛评分": vas_score,
@@ -47,32 +52,27 @@ with tab1:
             
         st.info("💾 您的打卡数据已成功记入康复档案表格！")
 
-       # 2. 警报逻辑
+        # 2. 警报与奖励逻辑
         if vas_score >= 5 or actual_sets < 3:
             st.error("🚨 警告：未达标或疼痛过高！请立刻停止训练，冰敷并联系主治医师！")
         else:
             st.success("✅ 恭喜完成！状态极佳，明天我们将增加一点抗阻力！")
-            
-            # 👇 把这两行加在这里！一定要和上面那行 st.success 对齐（缩进）
             st.toast("🎉 伟大的坚持！你今天的自律战胜了疼痛！", icon="🔥")
             st.balloons()
-            
-   # ==========================================
+
+# ==========================================
 # 空间二：医生后台（加装数字防盗门）
 # ==========================================
 with tab2:
     st.subheader("👨‍⚕️ 医师身份验证")
     
-    # 核心知识点：type="password" 会让输入的字变成小黑点
     doctor_password = st.text_input("🔒 请输入主治医师专属密码以解锁档案：", type="password")
     
-    # 鉴权逻辑（Authentication）
     if doctor_password == "admin123":
         st.success("✅ 身份确认。欢迎回来，主治医师。")
         st.divider()
         
         st.subheader("📊 历史康复趋势检索")
-        # --- 下面这部分就是你原本 tab2 里的旧代码，完全没变 ---
         if REHAB_CSV_PATH.exists():
             df = pd.read_csv(REHAB_CSV_PATH, encoding="utf-8-sig")
             patient_list = df["患者姓名"].unique()
@@ -80,7 +80,9 @@ with tab2:
             st.markdown(f"正在展示 **{selected_patient}** 的专属康复曲线：")
             
             passenger_df = df[df["患者姓名"] == selected_patient]
-            chart_data = passenger_df.set_index("打卡时间")["VAS疼痛评分"]
+            
+            # 👇 后台图表的横轴已经更新为你新加的“训练日期”了！
+            chart_data = passenger_df.set_index("训练日期")["VAS疼痛评分"]
             st.line_chart(chart_data)
             
             st.divider() 
@@ -102,6 +104,5 @@ with tab2:
         else:
             st.info("暂无历史打卡记录。这里是医生的专属数据看板。")
             
-    # 如果密码输错了，并且不是空的，就无情拒绝
     elif doctor_password != "":
         st.error("❌ 密码错误！您无权访问患者隐私数据！")
