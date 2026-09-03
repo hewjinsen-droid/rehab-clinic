@@ -1,4 +1,5 @@
 import pandas as pd
+import matplotlib.pyplot as plt
 import streamlit as st
 from datetime import datetime
 from pathlib import Path
@@ -81,13 +82,62 @@ with tab2:
             
             passenger_df = df[df["患者姓名"] == selected_patient]
             
-            # 👇 后台图表的横轴已经更新为你新加的“训练日期”了！
-            chart_data = passenger_df.set_index("训练日期")["VAS疼痛评分"]
-            st.line_chart(chart_data)
+            # --- 👇 进阶可视化：Matplotlib 医疗级图表 👇 ---
+            # 1. 准备数据：把日期和疼痛分数分别提取出来变成列表
+            dates = passenger_df["训练日期"].tolist()
+            scores = passenger_df["VAS疼痛评分"].tolist()
+            
+            # 2. 召唤画布和画笔（figsize=(10, 4) 控制图表的长宽比例）
+            fig, ax = plt.subplots(figsize=(10, 4))
+            
+            # 3. 画出核心折线（marker='o' 代表带圆点标记，color 设定为医疗蓝）
+            ax.plot(dates, scores, marker='o', color='#1f77b4', linewidth=2, markersize=8)
+            
+            # 4. 🌟 点睛之笔：画出浅红色的“危险预警区”(Y轴 5 到 10 的范围)
+            ax.axhspan(ymin=5, ymax=10, color='red', alpha=0.15, label='高危疼痛区 (VAS 5-10)')
+            
+            # 5. 装修图表边界和文字
+            ax.set_ylim(0, 10.5)  # 锁定 Y 轴范围为 0 到 10 分，防止图表乱跳
+            ax.set_ylabel("VAS Pain Score") # Y轴贴上标签
+            ax.set_title(f"患者 {selected_patient} 的疼痛趋势分析") # 加上霸气的标题
+            ax.grid(True, linestyle='--', alpha=0.6) # 加上虚线网格，看起来更专业
+            ax.legend(loc="upper left") # 在左上角显示图例（解释红框是什么）
+            
+            # 6. 把画好的神作挂到 Streamlit 网页上
+            st.pyplot(fig)
+            # --- 👆 可视化手术结束 👆 ---
             
             st.divider() 
-            st.subheader("🧠 AI 助理诊断报告")
             
+            # 👇 --- 新增手术：依从性雷达（患者自律性分析） --- 👇
+            st.subheader("🎯 患者依从性分析")
+            
+            # 1. 算总数：患者总共打卡了几天？
+            total_days = len(passenger_df) 
+            
+            # 2. 算达标数：只有“实际组数”大于等于 3 的，才算真正的 Good Boy
+            good_days = len(passenger_df[passenger_df["实际组数"] >= 3])
+            
+            if total_days > 0:
+                # 3. 算百分比：达标率 = (达标天数 / 总天数) * 100
+                compliance_rate = (good_days / total_days) * 100
+                
+                # 4. 酷炫的前端展示：把页面切成两列，放上仪表盘
+                col1, col2 = st.columns(2)
+                col1.metric(label="累计打卡天数", value=f"{total_days} 天")
+                col2.metric(label="高质量达标率", value=f"{compliance_rate:.1f}%", delta=f"{good_days} 天达标")
+                
+                # 5. 临床智能预警
+                if compliance_rate >= 80:
+                    st.success("🌟 极佳的依从性！患者高度自律，康复进度非常有保障。")
+                elif compliance_rate >= 60:
+                    st.info("🔄 依从性尚可，建议在复诊时给予正向鼓励。")
+                else:
+                    st.warning("⚠️ 警报：高质量完成率过低！患者极可能存在抗拒心理或严重动作代偿，需立刻介入干预！")
+            # 👆 --- 新增手术结束 --- 👆
+
+            st.divider() 
+            st.subheader("🧠 AI 助理诊断报告")
             if len(passenger_df) >= 3:
                 recent_3_records = passenger_df.tail(3)
                 avg_pain = recent_3_records["VAS疼痛评分"].mean()
