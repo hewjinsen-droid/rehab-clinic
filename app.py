@@ -90,14 +90,34 @@ with tab2:
             # 2. 召唤画布和画笔（figsize=(10, 4) 控制图表的长宽比例）
             fig, ax = plt.subplots(figsize=(10, 4))
             
-            # 3. 画出核心折线（marker='o' 代表带圆点标记，color 设定为医疗蓝）
+            # 3. 画出核心折线
             ax.plot(dates, scores, marker='o', color='#1f77b4', linewidth=2, markersize=8)
             
-            # 4. 🌟 点睛之笔：画出浅红色的“危险预警区”(Y轴 5 到 10 的范围)
+            # 4. 🌟 点睛之笔：画出浅红色的“危险预警区”
             ax.axhspan(ymin=5, ymax=10, color='red', alpha=0.15, label='高危疼痛区 (VAS 5-10)')
+
+            # +++++++++++++++++++++++++++++++++++++++++++
+            # 👇 今日新增模块：自动追踪最高疼痛极值 👇
             
+            # 第一步：找出这堆分数里的最高分 (寻峰)
+            max_score = max(scores)
+            
+            # 第二步：找出这个最高分在列表里的位置，并揪出对应的日期 (定位)
+            max_index = scores.index(max_score)
+            max_date = dates[max_index]
+            
+            # 第三步：指挥画笔，在这个坐标画一个带有红箭头的提示框
+            ax.annotate(f"Peak Pain: {max_score}", 
+                        xy=(max_date, max_score),            # 箭头尖端指着的目标坐标
+                        xytext=(max_date, max_score + 1.5),  # 文字框悬浮的坐标（比最高点再高1.5分）
+                        arrowprops=dict(facecolor='red', shrink=0.05, width=2, headwidth=8), # 定制红色箭头
+                        ha='center', color='red', fontweight='bold') # 文字居中、标红、加粗
+                        
+            # 👆 今日新增模块结束 👆
+            # +++++++++++++++++++++++++++++++++++++++++++
+
             # 5. 装修图表边界和文字
-            ax.set_ylim(0, 10.5)  # 锁定 Y 轴范围为 0 到 10 分，防止图表乱跳
+            ax.set_ylim(0, 10.5)
             ax.set_ylabel("VAS Pain Score") # Y轴贴上标签
             ax.set_title(f"患者 {selected_patient} 的疼痛趋势分析") # 加上霸气的标题
             ax.grid(True, linestyle='--', alpha=0.6) # 加上虚线网格，看起来更专业
