@@ -96,24 +96,26 @@ with tab2:
             # 4. 🌟 点睛之笔：画出浅红色的“危险预警区”
             ax.axhspan(ymin=5, ymax=10, color='red', alpha=0.15, label='高危疼痛区 (VAS 5-10)')
 
-            # +++++++++++++++++++++++++++++++++++++++++++
-            # 👇 今日新增模块：自动追踪最高疼痛极值 👇
+           # +++++++++++++++++++++++++++++++++++++++++++
+            # 👇 进阶模块：Pandas 多目标自动追踪最高疼痛极值 👇
             
-            # 第一步：找出这堆分数里的最高分 (寻峰)
-            max_score = max(scores)
+            # 1. 找出这一列的天花板分数
+            max_score = passenger_df["VAS疼痛评分"].max()
             
-            # 第二步：找出这个最高分在列表里的位置，并揪出对应的日期 (定位)
-            max_index = scores.index(max_score)
-            max_date = dates[max_index]
+            # 2. 精准切割：把所有等于最高分的行拿出来，提取它们的日期
+            peak_days_df = passenger_df[passenger_df["VAS疼痛评分"] == max_score]
+            peak_dates = peak_days_df["训练日期"].tolist()
             
-            # 第三步：指挥画笔，在这个坐标画一个带有红箭头的提示框
-            ax.annotate(f"Peak Pain: {max_score}", 
-                        xy=(max_date, max_score),            # 箭头尖端指着的目标坐标
-                        xytext=(max_date, max_score + 1.5),  # 文字框悬浮的坐标（比最高点再高1.5分）
-                        arrowprops=dict(facecolor='red', shrink=0.05, width=2, headwidth=8), # 定制红色箭头
-                        ha='center', color='red', fontweight='bold') # 文字居中、标红、加粗
-                        
-            # 👆 今日新增模块结束 👆
+            # 3. 导弹齐射：用 for 循环遍历每一个最高分的日期
+            for date in peak_dates:
+                # 针对每一个日期，画一个带红箭头的提示框
+                ax.annotate(f"Peak Pain: {max_score}", 
+                            xy=(date, max_score),            # 箭头指向当前的日期
+                            xytext=(date, max_score + 1.5),  # 文字框依旧悬浮在正上方
+                            arrowprops=dict(facecolor='red', shrink=0.05, width=2, headwidth=8), 
+                            ha='center', color='red', fontweight='bold')
+            
+            # 👆 进阶模块结束 👆
             # +++++++++++++++++++++++++++++++++++++++++++
 
             # 5. 装修图表边界和文字
